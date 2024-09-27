@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:confetti/confetti.dart';
@@ -28,60 +29,82 @@ class _TicTacToeState extends State<TicTacToe> {
   String status = "";
   bool isGameOver = true;
   List<int> winnerBoxes = [];
+  final ConfettiController confettiController = ConfettiController();
+  int xScore = 0;
+  int yScore = 0;
+
+  Timer? timer;
+  static const int maxSconds = 30;
+  int seconds = maxSconds;
+
+  void startTimer() {
+    status = "";
+    timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (seconds > 0) {
+        seconds--;
+      } else {
+        timer?.cancel();
+        isGameOver = true;
+        status = "Time up";
+        seconds = maxSconds;
+      }
+      setState(() {});
+    });
+  }
+
+  void declareWinner(int a, int b, int c) {
+    status = "${boxesVal[a]} Wins";
+    isGameOver = true;
+    winnerBoxes.addAll([a, b, c]);
+    confettiController.play();
+    timer?.cancel();
+    if (boxesVal[a] == "X") {
+      xScore++;
+    } else {
+      yScore++;
+    }
+    Timer.periodic(const Duration(seconds: 5), (timer) {
+      confettiController.stop();
+    });
+  }
 
   void checkWinners() {
     if (boxesVal[0] != "" &&
         boxesVal[0] == boxesVal[1] &&
         boxesVal[0] == boxesVal[2]) {
-      status = "${boxesVal[0]} Wins";
-      isGameOver = true;
-      winnerBoxes.addAll([0, 1, 2]);
-      confettiController.play();
+      declareWinner(0, 1, 2);
     } else if (boxesVal[3] != "" &&
         boxesVal[3] == boxesVal[4] &&
         boxesVal[3] == boxesVal[5]) {
-      status = "${boxesVal[3]} Wins";
-      isGameOver = true;
-      winnerBoxes.addAll([3, 4, 5]);
+      declareWinner(3, 4, 5);
     } else if (boxesVal[6] != "" &&
         boxesVal[6] == boxesVal[7] &&
         boxesVal[6] == boxesVal[8]) {
-      status = "${boxesVal[6]} Wins";
-      isGameOver = true;
-      winnerBoxes.addAll([6, 7, 8]);
+      declareWinner(6, 7, 8);
     } else if (boxesVal[0] != "" &&
         boxesVal[0] == boxesVal[3] &&
         boxesVal[0] == boxesVal[6]) {
-      status = "${boxesVal[0]} Wins";
-      isGameOver = true;
-      winnerBoxes.addAll([0, 3, 6]);
+      declareWinner(0, 3, 6);
     } else if (boxesVal[1] != "" &&
         boxesVal[1] == boxesVal[4] &&
         boxesVal[1] == boxesVal[7]) {
-      status = "${boxesVal[1]} Wins";
-      isGameOver = true;
-      winnerBoxes.addAll([1, 4, 7]);
+      declareWinner(1, 4, 7);
     } else if (boxesVal[2] != "" &&
         boxesVal[2] == boxesVal[5] &&
         boxesVal[2] == boxesVal[8]) {
-      status = "${boxesVal[2]} Wins";
-      isGameOver = true;
-      winnerBoxes.addAll([2, 5, 8]);
+      declareWinner(2, 5, 8);
     } else if (boxesVal[0] != "" &&
         boxesVal[0] == boxesVal[4] &&
         boxesVal[0] == boxesVal[8]) {
-      status = "${boxesVal[0]} Wins";
-      isGameOver = true;
-      winnerBoxes.addAll([0, 4, 8]);
+      declareWinner(0, 4, 8);
     } else if (boxesVal[2] != "" &&
         boxesVal[2] == boxesVal[4] &&
         boxesVal[2] == boxesVal[6]) {
-      status = "${boxesVal[2]} Wins";
-      isGameOver = true;
-      winnerBoxes.addAll([2, 4, 6]);
+      declareWinner(2, 4, 6);
     } else if (boxesVal.every((e) => e != "")) {
       status = "Game Drawn";
       isGameOver = true;
+      timer?.cancel();
     }
   }
 
@@ -101,13 +124,13 @@ class _TicTacToeState extends State<TicTacToe> {
   }
 
   void startGame() {
+    seconds = maxSconds;
+    startTimer();
     winnerBoxes = [];
     isGameOver = false;
     boxesVal.fillRange(0, 9, "");
     setState(() {});
   }
-
-  final ConfettiController confettiController = ConfettiController();
 
   @override
   Widget build(BuildContext context) {
@@ -138,7 +161,7 @@ class _TicTacToeState extends State<TicTacToe> {
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         Text(
-                          "0",
+                          xScore.toString(),
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                       ],
@@ -154,7 +177,7 @@ class _TicTacToeState extends State<TicTacToe> {
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         Text(
-                          "0",
+                          yScore.toString(),
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                       ],
@@ -207,9 +230,27 @@ class _TicTacToeState extends State<TicTacToe> {
                 ),
 
                 //Bottom Section
-                Text(
-                  "Time Up",
-                  style: Theme.of(context).textTheme.titleMedium,
+                SizedBox(
+                  height: 100,
+                  width: 100,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    fit: StackFit.expand,
+                    children: [
+                      CircularProgressIndicator(
+                        value: 1 - seconds / maxSconds,
+                        strokeWidth: 8,
+                        valueColor:
+                            AlwaysStoppedAnimation(AssetColors.accentColor),
+                      ),
+                      Center(
+                        child: Text(
+                          seconds.toString(),
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 Padding(
                   padding: const EdgeInsets.all(8.0),
